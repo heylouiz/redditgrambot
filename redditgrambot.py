@@ -35,8 +35,8 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
                      user_agent=CONFIGURATION["user_agent"])
 
 # Regexes TODO: Match on multiple lines, currently only matching if the string is on the first line
-re_links = ".*(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat)\.com\/(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?)).*"
-re_subreddit = ".*(?:\/r\/((?:(?:[a-zA-Z0-9]+)\+?)+)).*"
+re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"
+re_subreddit = r"(?:\s\/r\/((?:(?:[a-zA-Z0-9]+)\+?)+))"
 
 # Command functions
 def start(bot, update):
@@ -49,12 +49,8 @@ def help(bot, update):
     update.message.reply_text(HELP_MESSAGE)
 
 
-def search_post(bot, update, groups):
+def search_post(bot, update, url):
     """Search link on reddit."""
-    try:
-        url = groups[0] # Contains the first matched group
-    except:
-        return
     submissions = [s for s in reddit.subreddit('all').search(query='url:{}'.format(url), sort="top")]
     len_sub = len(submissions)
     if len_sub:
@@ -109,13 +105,8 @@ def more_button(bot, update):
                               "chat_id": query.message.chat_id,
                               "username": query.from_user.username})
 
-def peek_subreddit(bot, update, groups):
+def peek_subreddit(bot, update, subreddit):
     """Show current hot posts of subreddit."""
-    try:
-        subreddit = groups[0] # Contains the first matched group
-    except:
-        return
-
     reply = "Here's a sneak peek of [/r/{}]({}):\n".format(subreddit, SUBREDDIT_URL.format(subreddit))
     for post in reddit.subreddit(subreddit).hot(limit=5):
         striped_title = re.sub("[\[\](){}]","", post.title)
@@ -124,6 +115,17 @@ def peek_subreddit(bot, update, groups):
 
     update.message.reply_text(text=reply, parse_mode="Markdown", disable_web_page_preview=True)
 
+@run_async
+def message_handler(bot, update):
+    matches = re.findall(re_links, update.message.text)
+    if matches:
+        search_post(bot, update, matches[0])
+        return
+
+    matches = re.findall(re_subreddit, update.message.text)
+    if matches:
+        peek_subreddit(bot, update, matches[0])
+        return
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -144,8 +146,7 @@ def main():
     dp.add_handler(CommandHandler("r", random_post))
 
     # Add message handlers
-    dp.add_handler(RegexHandler(re_links, search_post, pass_groups=True))
-    dp.add_handler(RegexHandler(re_subreddit, peek_subreddit, pass_groups=True))
+    dp.add_handler(MessageHandler(Filters.text, message_handler))
 
     # Add inline button handlers
     dp.add_handler(CallbackQueryHandler(more_button))

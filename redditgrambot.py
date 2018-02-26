@@ -53,6 +53,12 @@ def search_post(bot, update, url):
     """Search link on reddit."""
     submissions = [s for s in reddit.subreddit('all').search(query='url:{}'.format(url), sort="top")]
     len_sub = len(submissions)
+    if len_sub < 2 and url.endswith("mp4"):
+        # Sometimes an app shares a gifv link with mp4 extension, I don't know why this happens.
+        # A quick fix is try to search for the gifv version of the video
+        url = url.replace("mp4", "gifv")
+        submissions = [s for s in reddit.subreddit('all').search(query='url:{}'.format(url), sort="top")] + submissions
+        len_sub = len(submissions)
     if len_sub:
         reply = "I found {} {} with this [url]({})\n".format(len_sub, "posts" if len_sub > 1 else "post", url)
         for sub in submissions[:3]:

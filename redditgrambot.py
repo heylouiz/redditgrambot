@@ -36,7 +36,7 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
 
 # Regexes TODO: Match on multiple lines, currently only matching if the string is on the first line
 re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"
-re_subreddit = r"(?:\s\/r\/((?:(?:[a-zA-Z0-9]+)\+?)+))"
+re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9]+))"
 
 # Command functions
 def start(bot, update):
@@ -147,6 +147,7 @@ def main():
 
     # Add message handlers
     dp.add_handler(MessageHandler(Filters.text, message_handler))
+    dp.add_handler(RegexHandler("/r/.*", message_handler)) # hack to get messages starting with /
 
     # Add inline button handlers
     dp.add_handler(CallbackQueryHandler(more_button))

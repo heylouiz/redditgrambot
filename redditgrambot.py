@@ -4,6 +4,7 @@ import praw
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, RegexHandler, Filters, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
+from telegram.utils.helpers import escape_markdown
 import logging
 import re
 import random
@@ -85,7 +86,7 @@ def random_post(bot, update, more=None):
         # Know reddit bug, see: https://github.com/praw-dev/praw/issues/885
         # So we use our own random with blackjack and hookers
         post = random.choice([p for p in reddit.subreddit(subreddit).hot(limit=25)])
-   
+
     if not post:
         update.message.reply_test("Invalid subreddit {}".format(subreddit))
 
@@ -94,7 +95,10 @@ def random_post(bot, update, more=None):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    reply_text = "*{}*\n{}\nRandom post from [/r/{}]({})".format(post.title, post.url,
+    title = escape_markdown(post.title)
+    url = escape_markdown(post.url)
+    selftext = escape_markdown(post.selftext)
+    reply_text = "*{}*\n{}\nRandom post from [/r/{}]({})".format(title, url if not selftext else selftext + "\n",
                                                                  subreddit, SUBREDDIT_URL.format(subreddit))
 
     if more:

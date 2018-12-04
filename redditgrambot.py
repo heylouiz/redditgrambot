@@ -9,6 +9,8 @@ import logging
 import re
 import random
 import json
+import youtube_dl
+import os
 
 # Load config
 with open('config.json') as config_file:
@@ -38,6 +40,9 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
 # Regexes TODO: Match on multiple lines, currently only matching if the string is on the first line
 re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:gallery/)?(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"
 re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9]+))"
+v_reddit_links = r"(https?:\/\/(?:www\.)?(?:v\.)?(?:redd.it)\/(?:.*?))(?:\s|$)"
+comments_id = r'(https://www.reddit.com/r/(?:.*?)/comments/(.*?)/.*)'
+
 
 # Command functions
 def start(bot, update):
@@ -125,8 +130,39 @@ def peek_subreddit(bot, update, subreddit):
 
     update.message.reply_text(text=reply, parse_mode="Markdown", disable_web_page_preview=True)
 
+
+def get_vreddit_url(text):
+    match = re.search(v_reddit_links, text)
+    if match:
+        return match.group(1)
+    match = re.search(comments_id, text)
+    if match:
+        submission = reddit.submission(match.group(2))
+        if submission.crosspost_parent:
+            submission = reddit.submission(submission.crosspost_parent.split('_')[1])
+        if submission.is_video:
+            return submission.url
+    return None
+
+
+def send_video(bot, update, url):
+    filename = '/tmp/%s%s.mp4' % (update.message.chat.id, update.message.message_id)
+    ydl_opts = {'outtmpl': filename}
+    #            'format': 'mp4'}
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+
+    with open(filename, 'rb') as video:
+        update.message.reply_video(video=video, timeout=99999)
+    os.remove(filename)
+
+
 @run_async
 def message_handler(bot, update):
+    v_reddit = get_vreddit_url(update.message.text)
+    if v_reddit:
+        send_video(bot, update, v_reddit)
+
     matches = re.findall(re_links, update.message.text)
     if matches:
         search_post(bot, update, matches[0])

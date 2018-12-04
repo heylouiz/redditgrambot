@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
+import logging
+import os
+import random
+import re
+
 import praw
+import youtube_dl
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, RegexHandler, Filters, CallbackQueryHandler
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown
-import logging
-import re
-import random
-import json
-import youtube_dl
-import os
 
 # Load config
 with open('config.json') as config_file:
@@ -38,7 +40,7 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
                      user_agent=CONFIGURATION["user_agent"])
 
 # Regexes TODO: Match on multiple lines, currently only matching if the string is on the first line
-re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:gallery/)?(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"
+re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:gallery/)?(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"  # noqa: E501
 re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9]+))"
 v_reddit_links = r"(https?:\/\/(?:www\.)?(?:v\.)?(?:redd.it)\/(?:.*?))(?:\s|$)"
 comments_id = r'(https://www.reddit.com/r/(?:.*?)/comments/(.*?)/.*)'
@@ -69,13 +71,14 @@ def search_post(bot, update, url):
         reply = "I found {} {} with this [url]({})\n".format(len_sub, "posts" if len_sub > 1 else "post", url)
         for sub in submissions[:3]:
             sub_url = SUBREDDIT_URL.format(sub.subreddit)
-            striped_title = re.sub("[\[\](){}]","", sub.title)
+            striped_title = re.sub(r"[\[\](){}]", "", sub.title)
             reply += "{}⇳ [{}]({}) (on [/r/{}]({}))\n".format(sub.ups, striped_title,
                                                               sub.shortlink, sub.subreddit, sub_url)
         if len_sub > 3:
             reply += "\nShowing at most the three most upvoted:\n"
             reply += "You can see all posts in this [link]({})".format(SEARCH_URL.format(url))
         update.message.reply_text(text=reply, parse_mode="Markdown", disable_web_page_preview=True)
+
 
 @run_async
 def random_post(bot, update, more=None):
@@ -112,6 +115,7 @@ def random_post(bot, update, more=None):
     else:
         update.message.reply_text(text=reply_text, reply_markup=reply_markup, parse_mode="Markdown")
 
+
 @run_async
 def more_button(bot, update):
     query = update.callback_query
@@ -120,11 +124,12 @@ def more_button(bot, update):
                               "chat_id": query.message.chat_id,
                               "username": query.from_user.username})
 
+
 def peek_subreddit(bot, update, subreddit):
     """Show current hot posts of subreddit."""
     reply = "Here's a sneak peek of [/r/{}]({}):\n".format(subreddit, SUBREDDIT_URL.format(subreddit))
     for post in reddit.subreddit(subreddit).hot(limit=5):
-        striped_title = re.sub("[\[\](){}]","", post.title)
+        striped_title = re.sub(r"[\[\](){}]", "", post.title)
         striped_title = striped_title[:40] + "..." if len(striped_title) > 40 else striped_title
         reply += "- [{}]({})\n".format(striped_title, post.shortlink)
 
@@ -173,6 +178,7 @@ def message_handler(bot, update):
         peek_subreddit(bot, update, matches[0])
         return
 
+
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
@@ -193,7 +199,7 @@ def main():
 
     # Add message handlers
     dp.add_handler(MessageHandler(Filters.text, message_handler))
-    dp.add_handler(RegexHandler("/r/.*", message_handler)) # hack to get messages starting with /
+    dp.add_handler(RegexHandler("/r/.*", message_handler))  # hack to get messages starting with /
 
     # Add inline button handlers
     dp.add_handler(CallbackQueryHandler(more_button))

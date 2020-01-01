@@ -41,7 +41,7 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
 
 # Regexes TODO: Match on multiple lines, currently only matching if the string is on the first line
 re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:gallery/)?(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"  # noqa: E501
-re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9]+))"
+re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9_]+))"
 v_reddit_links = r"(https?:\/\/(?:www\.)?(?:v\.)?(?:redd.it)\/(?:.*?))(?:\s|$)"
 comments_id = r'(https:\/\/(?:www\.|old\.)?reddit.com\/r\/(?:.*?)\/comments\/(.*?)\/.*)'
 

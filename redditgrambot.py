@@ -143,7 +143,7 @@ def get_vreddit_url(text):
     match = re.search(comments_id, text)
     if match:
         submission = reddit.submission(match.group(2))
-        if submission.crosspost_parent:
+        if hasattr(submission, 'crosspost_parent') and submission.crosspost_parent:
             submission = reddit.submission(submission.crosspost_parent.split('_')[1])
         if submission.is_video:
             return submission.url

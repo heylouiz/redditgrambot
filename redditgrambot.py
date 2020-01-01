@@ -43,7 +43,7 @@ reddit = praw.Reddit(client_id=CONFIGURATION["client_id"],
 re_links = r"(https?:\/\/(?:www\.)?(?:i\.)?(?:imgur|gfycat|redd|streamable)\.(?:com|it)\/(?:gallery/)?(?:a\/[a-zA-Z0-9]+|(?:[a-zA-Z0-9_-]+)\.?(?:gifv|webm|mp4|png|jpg|gif|jpeg)?))"  # noqa: E501
 re_subreddit = r"(?:^|\W)(?:\/r\/([a-zA-Z0-9]+))"
 v_reddit_links = r"(https?:\/\/(?:www\.)?(?:v\.)?(?:redd.it)\/(?:.*?))(?:\s|$)"
-comments_id = r'(https://www.reddit.com/r/(?:.*?)/comments/(.*?)/.*)'
+comments_id = r'(https:\/\/(?:www\.|old\.)?reddit.com\/r\/(?:.*?)\/comments\/(.*?)\/.*)'
 
 
 # Command functions
